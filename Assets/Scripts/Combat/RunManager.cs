@@ -31,6 +31,7 @@ namespace CardGame.Combat
         [SerializeField] private Button gameOverRestartButton;
         [SerializeField] private GameObject gameClearRoot;
         [SerializeField] private Button gameClearRestartButton;
+        [SerializeField] private CardGame.UI.MenuPanelController pauseMenu;
 
         [Header("Deck")]
         [SerializeField] private List<CardData> startingDeck;
@@ -57,12 +58,20 @@ namespace CardGame.Combat
             startButton.onClick.AddListener(BeginNewRun);
             gameOverRestartButton.onClick.AddListener(BeginNewRun);
             gameClearRestartButton.onClick.AddListener(BeginNewRun);
+            if (pauseMenu != null) pauseMenu.OnRestartRequested += HandlePauseMenuRestart;
         }
 
         private void OnDestroy()
         {
             combatController.OnCombatEnded -= HandleCombatEnded;
             combatController.OnGoldEarned -= AddGold;
+            if (pauseMenu != null) pauseMenu.OnRestartRequested -= HandlePauseMenuRestart;
+        }
+
+        private void HandlePauseMenuRestart()
+        {
+            pauseMenu.Close();
+            BeginNewRun();
         }
 
         private void Start()

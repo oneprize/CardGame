@@ -14,5 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardGame.Combat.EnemyData
   displayName: "\uC624\uC6B0\uAC70 \uB300\uC7A5"
   maxHP: 55
-  attackDamage: 9
+  attackDamage: 8
   goldReward: 30
+  portrait: {fileID: 0}
