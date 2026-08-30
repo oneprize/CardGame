@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2da0d8f8177d9d749a3842e2bb180a00, type: 3}
+  m_Name: Card_Catalyst
+  m_EditorClassIdentifier: Assembly-CSharp::CardGame.Cards.CardData
+  id: catalyst
+  displayName: "\uCD09\uB9E4"
+  description: "\uC801\uC758 \uC911\uB3C5 \uC218\uCE58\uB97C 2\uBC30\uB85C \uB9CC\uB4E0\uB2E4.
+    \uC0AC\uC6A9 \uD6C4 \uC18C\uBA78\uD55C\uB2E4."
+  cost: 1
+  cardType: 10
+  effectValue: 0
+  hitCount: 1
+  ignoresBlock: 0
+  exhausts: 1
+  guideShape: 0
+  timeLimit: 3
