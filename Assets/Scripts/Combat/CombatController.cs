@@ -80,6 +80,10 @@ namespace CardGame.Combat
         private int _playerThornsTurns;
         private bool _blockPersists;
 
+        // Lifesteal: while active, heals this % of any damage the player's attacks deal. Lasts only
+        // until the start of the player's next turn (see StartPlayerTurn).
+        private int _playerLifestealPercent;
+
         private void Awake()
         {
             endTurnButton.onClick.AddListener(EndPlayerTurn);
@@ -117,6 +121,7 @@ namespace CardGame.Combat
             _playerThorns = 0;
             _playerThornsTurns = 0;
             _blockPersists = false;
+            _playerLifestealPercent = 0;
 
             _deck = new DeckRuntime(deck);
             _combatOver = false;
@@ -134,6 +139,7 @@ namespace CardGame.Combat
             if (!_blockPersists)
                 playerHealth.ClearBlock();
             _currentEnergy = startingEnergy;
+            _playerLifestealPercent = 0;
 
             if (_noxiousFumesPoisonPerTurn > 0)
             {
@@ -280,6 +286,22 @@ namespace CardGame.Combat
                     if (_selectedEnemyIndex >= 0)
                         enemySlots[_selectedEnemyIndex].ApplyWeaken(StatusEffectDuration);
                     break;
+                case CardType.DefendAndAttack:
+                    playerHealth.AddBlock(card.effectValue);
+                    if (_selectedEnemyIndex >= 0)
+                        DealDamage(enemySlots[_selectedEnemyIndex], card);
+                    break;
+                case CardType.DefendAndEnfeeble:
+                    playerHealth.AddBlock(card.effectValue);
+                    if (_selectedEnemyIndex >= 0)
+                        enemySlots[_selectedEnemyIndex].ApplyEnfeeble(StatusEffectDuration);
+                    break;
+                case CardType.DefendPerEnemy:
+                    playerHealth.AddBlock(card.effectValue * CountAliveEnemies());
+                    break;
+                case CardType.Lifesteal:
+                    _playerLifestealPercent = card.effectValue;
+                    break;
             }
         }
 
@@ -291,7 +313,13 @@ namespace CardGame.Combat
             if (target.HasWeaken)
                 damage += Mathf.FloorToInt(damage * WeakenDamageMultiplier);
 
-            DamageEnemy(target, damage, card.ignoresBlock);
+            int actualDamage = DamageEnemy(target, damage, card.ignoresBlock);
+
+            if (_playerLifestealPercent > 0 && actualDamage > 0)
+            {
+                int healed = Mathf.FloorToInt(actualDamage * _playerLifestealPercent / 100f);
+                if (healed > 0) playerHealth.Heal(healed);
+            }
         }
 
         // Applies a random-target Poison hit `card.hitCount` times (Bouncing Flask); each hit can
@@ -314,12 +342,22 @@ namespace CardGame.Combat
 
         // Single funnel for all enemy-facing damage (cards and Poison ticks alike) so gold-on-kill,
         // the hit flash, and Corpse Explosion all trigger the same way no matter what caused it.
-        private void DamageEnemy(EnemySlotView target, int amount, bool ignoreBlock)
+        // Returns how much HP the target actually lost (post-Block), e.g. for Lifesteal - 0 if the
+        // target was already dead or the hit was negated.
+        private int DamageEnemy(EnemySlotView target, int amount, bool ignoreBlock)
         {
-            if (target.Health.IsDead) return;
+            if (target.Health.IsDead) return 0;
+
+            if (target.ConsumeDamageNegation())
+            {
+                Log($"{target.Data.displayName}의 피해가 무효화되었습니다!");
+                return 0;
+            }
 
             EnemyData data = target.Data;
+            int hpBefore = target.Health.CurrentHP;
             target.Health.TakeDamage(amount, ignoreBlock);
+            int actualDamage = hpBefore - target.Health.CurrentHP;
             target.PlayHitFlash();
 
             if (target.Health.IsDead)
@@ -329,6 +367,8 @@ namespace CardGame.Combat
                     TriggerCorpseExplosion(target);
                 target.Hide();
             }
+
+            return actualDamage;
         }
 
         // Corpse Explosion: the dead enemy's max HP is dealt to every other still-alive enemy. Can
@@ -362,9 +402,27 @@ namespace CardGame.Combat
         // landing in the same frame, so the attack-punch animation and HP drops are each visible.
         private IEnumerator EnemyTurnRoutine()
         {
+            // Pre-scan: if any living enemy's next own action is Split (and there's room for the
+            // resulting clone), the whole group's plain Attack actions are suspended this round -
+            // only the one Split resolves. See ResolveSplit/HasEmptyEnemySlot.
+            bool anySplitPending = false;
+            foreach (var scanSlot in enemySlots)
+            {
+                if (scanSlot.Data == null || scanSlot.Health.IsDead || scanSlot.SkipThisTurn) continue;
+                if (scanSlot.PeekNextPatternAction() == EnemyTurnAction.Split && HasEmptyEnemySlot())
+                    anySplitPending = true;
+            }
+            bool splitResolvedThisRound = false;
+
             foreach (var slot in enemySlots)
             {
                 if (slot.Data == null || slot.Health.IsDead) continue;
+
+                if (slot.SkipThisTurn)
+                {
+                    slot.SkipThisTurn = false;
+                    continue;
+                }
 
                 if (slot.PoisonStacks > 0)
                 {
@@ -373,16 +431,76 @@ namespace CardGame.Combat
                     if (slot.Health.IsDead) continue;
                 }
 
-                int damage = slot.Data.attackDamage;
-                if (slot.HasEnfeeble)
-                    damage -= Mathf.FloorToInt(damage * EnfeebleDamageMultiplier);
+                EnemyTurnAction peeked = slot.PeekNextPatternAction();
+                bool resolvesAsSplit = peeked == EnemyTurnAction.Split && HasEmptyEnemySlot();
 
-                playerHealth.TakeDamage(damage);
-                slot.PlayAttackPunch();
-                Log($"{slot.Data.displayName}이(가) {damage} 데미지를 입혔습니다");
+                if (resolvesAsSplit)
+                {
+                    slot.ConsumeNextPatternAction();
+                    if (!splitResolvedThisRound)
+                    {
+                        ResolveSplit(slot.Data);
+                        splitResolvedThisRound = true;
+                        Log($"{slot.Data.displayName}이(가) 분열합니다!");
+                    }
+                }
+                else if (peeked == EnemyTurnAction.Attack || peeked == EnemyTurnAction.Split)
+                {
+                    // peeked == Split here only when the population cap left no room to clone into -
+                    // it falls back to a plain attack instead of doing nothing.
+                    if (anySplitPending)
+                    {
+                        Log($"{slot.Data.displayName}이(가) 다른 개체의 분열로 인해 이번 턴 공격을 멈춥니다");
+                    }
+                    else
+                    {
+                        slot.ConsumeNextPatternAction();
+                        int damage = slot.Data.attackDamage;
+                        if (slot.HasEnfeeble)
+                            damage -= Mathf.FloorToInt(damage * EnfeebleDamageMultiplier);
 
-                if (_playerThorns > 0)
-                    DamageEnemy(slot, _playerThorns, false);
+                        playerHealth.TakeDamage(damage);
+                        slot.PlayAttackPunch();
+                        Log($"{slot.Data.displayName}이(가) {damage} 데미지를 입혔습니다");
+
+                        if (_playerThorns > 0)
+                            DamageEnemy(slot, _playerThorns, false);
+                    }
+                }
+                else
+                {
+                    EnemyTurnAction action = slot.ConsumeNextPatternAction();
+                    switch (action)
+                    {
+                        case EnemyTurnAction.ShieldNegate:
+                            slot.AddDamageNegation(1);
+                            Log($"{slot.Data.displayName}이(가) 다음 피해를 무효화할 준비를 합니다");
+                            break;
+                        case EnemyTurnAction.Summon:
+                            SummonEnemies(slot.Data.summonEnemyData, slot.Data.summonCount);
+                            Log($"{slot.Data.displayName}이(가) 지원군을 소환했습니다!");
+                            break;
+                        case EnemyTurnAction.Defend:
+                            slot.Health.AddBlock(slot.Data.defendAmount);
+                            Log($"{slot.Data.displayName}이(가) 방어 태세를 취합니다 (+{slot.Data.defendAmount})");
+                            break;
+                        case EnemyTurnAction.AttackCharge:
+                            // Deals whatever Block this enemy currently has left (player attacks against
+                            // it in the meantime reduce this), then clears that Block to 0.
+                            int chargedDamage = slot.Health.Block;
+                            slot.Health.ClearBlock();
+                            if (slot.HasEnfeeble)
+                                chargedDamage -= Mathf.FloorToInt(chargedDamage * EnfeebleDamageMultiplier);
+
+                            playerHealth.TakeDamage(chargedDamage);
+                            slot.PlayAttackPunch();
+                            Log($"{slot.Data.displayName}이(가) 축적된 힘으로 {chargedDamage} 데미지를 입혔습니다!");
+
+                            if (_playerThorns > 0)
+                                DamageEnemy(slot, _playerThorns, false);
+                            break;
+                    }
+                }
 
                 slot.TickStatusEffects();
                 RefreshPlayerStatusUI();
@@ -411,6 +529,66 @@ namespace CardGame.Combat
             foreach (var slot in enemySlots)
                 if (slot.Data != null && !slot.Health.IsDead) return false;
             return true;
+        }
+
+        private int CountAliveEnemies()
+        {
+            int count = 0;
+            foreach (var slot in enemySlots)
+                if (slot.Data != null && !slot.Health.IsDead) count++;
+            return count;
+        }
+
+        // Fills up to `count` empty enemy slots with fresh copies of `data` (e.g. Undead Commander's
+        // Summon action). Summoned enemies don't act until their next own turn (see SkipThisTurn).
+        private void SummonEnemies(EnemyData data, int count)
+        {
+            if (data == null) return;
+
+            int summoned = 0;
+            foreach (var slot in enemySlots)
+            {
+                if (summoned >= count) break;
+                if (slot.Data != null && !slot.Health.IsDead) continue;
+
+                slot.Show(data);
+                slot.SkipThisTurn = true;
+                summoned++;
+            }
+        }
+
+        private bool HasEmptyEnemySlot()
+        {
+            foreach (var slot in enemySlots)
+                if (slot.Data == null || slot.Health.IsDead) return true;
+            return false;
+        }
+
+        // Split: finds the highest-current-HP living instance of `species` (ties broken by the
+        // rightmost/highest-index slot), halves its HP, and fills the first empty slot with a fresh
+        // clone carrying that same halved HP. The clone doesn't act the round it's created.
+        private void ResolveSplit(EnemyData species)
+        {
+            EnemySlotView target = null;
+            foreach (var slot in enemySlots)
+            {
+                if (slot.Data != species || slot.Health.IsDead) continue;
+                if (target == null || slot.Health.CurrentHP >= target.Health.CurrentHP)
+                    target = slot;
+            }
+            if (target == null) return;
+
+            int halved = Mathf.Max(1, target.Health.CurrentHP / 2);
+            target.Health.SetCurrentHP(halved);
+
+            foreach (var slot in enemySlots)
+            {
+                if (slot.Data != null && !slot.Health.IsDead) continue;
+                slot.Show(species);
+                slot.Health.SetCurrentHP(halved);
+                slot.SkipThisTurn = true;
+                break;
+            }
         }
 
         private void CheckCombatEnd()

@@ -40,6 +40,16 @@ namespace CardGame.Combat
         // currently-alive enemy.
         public bool HasCorpseExplosion { get; private set; }
 
+        // Position in Data.turnPattern for this enemy's next own turn (wraps once it reaches the end).
+        public int TurnPatternIndex { get; private set; }
+
+        // ShieldNegate stacks: the next N times this enemy would take damage (any source, any
+        // amount), each is nullified instead and consumes one stack.
+        public int DamageNegationStacks { get; private set; }
+
+        // Set on enemies filled in mid-battle via Summon so they don't act the turn they arrive.
+        public bool SkipThisTurn { get; set; }
+
         public event Action OnClicked;
 
         private bool _isSelected;
@@ -74,6 +84,9 @@ namespace CardGame.Combat
             EnfeebleTurns = 0;
             PoisonStacks = 0;
             HasCorpseExplosion = false;
+            TurnPatternIndex = 0;
+            DamageNegationStacks = 0;
+            SkipThisTurn = false;
             gameObject.SetActive(true);
         }
 
@@ -151,15 +164,74 @@ namespace CardGame.Combat
             HasCorpseExplosion = true;
         }
 
+        // Looks at the action this enemy will take on its next own turn without consuming it -
+        // used both to resolve the turn and to preview the intent text.
+        public EnemyTurnAction PeekNextPatternAction()
+        {
+            if (Data == null || Data.turnPattern == null || Data.turnPattern.Count == 0)
+                return EnemyTurnAction.Attack;
+            return Data.turnPattern[TurnPatternIndex % Data.turnPattern.Count];
+        }
+
+        public EnemyTurnAction ConsumeNextPatternAction()
+        {
+            EnemyTurnAction action = PeekNextPatternAction();
+            TurnPatternIndex++;
+            return action;
+        }
+
+        public void AddDamageNegation(int amount)
+        {
+            DamageNegationStacks += Mathf.Max(0, amount);
+        }
+
+        // Called by the damage funnel before applying any damage. Returns true (and consumes one
+        // stack) if this hit should be nullified instead.
+        public bool ConsumeDamageNegation()
+        {
+            if (DamageNegationStacks <= 0) return false;
+            DamageNegationStacks--;
+            return true;
+        }
+
         public string GetStatusText()
         {
             if (Data == null) return string.Empty;
-            string intent = Health.IsDead ? "처치됨" : $"다음 공격: {Data.attackDamage}";
+            string intent;
+            if (Health.IsDead)
+            {
+                intent = "처치됨";
+            }
+            else
+            {
+                switch (PeekNextPatternAction())
+                {
+                    case EnemyTurnAction.ShieldNegate:
+                        intent = "다음 행동: 피해 무효화 준비";
+                        break;
+                    case EnemyTurnAction.Summon:
+                        intent = "다음 행동: 지원군 소환";
+                        break;
+                    case EnemyTurnAction.Defend:
+                        intent = $"다음 행동: 방어 태세 (+{Data.defendAmount})";
+                        break;
+                    case EnemyTurnAction.AttackCharge:
+                        intent = $"다음 공격: 축적된 방어력 {Health.Block}";
+                        break;
+                    case EnemyTurnAction.Split:
+                        intent = "다음 행동: 분열";
+                        break;
+                    default:
+                        intent = $"다음 공격: {Data.attackDamage}";
+                        break;
+                }
+            }
             string status = "";
             if (HasWeaken) status += $"  [약화 {WeakenTurns}턴]";
             if (HasEnfeeble) status += $"  [무력화 {EnfeebleTurns}턴]";
             if (PoisonStacks > 0) status += $"  [중독 {PoisonStacks}]";
             if (HasCorpseExplosion) status += "  [시체 폭발]";
+            if (DamageNegationStacks > 0) status += $"  [무효화 {DamageNegationStacks}]";
             return $"{Data.displayName}  HP {Health.CurrentHP}/{Health.MaxHP}\n{intent}{status}";
         }
 

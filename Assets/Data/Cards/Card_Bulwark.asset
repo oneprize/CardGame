@@ -14,12 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardGame.Cards.CardData
   id: bulwark
   displayName: "\uCCA0\uBCBD"
-  description: "\uC628\uBAB8\uC744 \uB358\uC838 \uB9C9\uB294 \uBC29\uC5B4\uB9C9"
+  description: "\uBC29\uC5B4 16\uC744 \uC5BB\uACE0, \uB300\uC0C1\uC5D0\uAC8C \uBB34\uB825\uD654\uB97C
+    \uBD80\uC5EC\uD55C\uB2E4."
   cost: 3
-  cardType: 1
-  effectValue: 15
+  cardType: 18
+  effectValue: 16
   hitCount: 1
   ignoresBlock: 0
   exhausts: 0
   guideShape: 3
-  timeLimit: 3.5
+  timeLimit: 5

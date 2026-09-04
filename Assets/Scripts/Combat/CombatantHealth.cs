@@ -44,6 +44,14 @@ namespace CardGame.Combat
             OnChanged?.Invoke();
         }
 
+        // Directly sets HP, bypassing Block - used by non-damage effects like a boss's self-split
+        // (as opposed to TakeDamage, which is for incoming attacks/poison/etc.).
+        public void SetCurrentHP(int value)
+        {
+            CurrentHP = Mathf.Clamp(value, 0, MaxHP);
+            OnChanged?.Invoke();
+        }
+
         // Block absorbs damage first, like most deckbuilders; excess spills over to HP.
         // ignoreBlock lets armor-piercing effects (e.g. Precise Stab) skip that absorption entirely.
         public void TakeDamage(int amount, bool ignoreBlock = false)

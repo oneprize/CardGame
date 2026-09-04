@@ -13,7 +13,11 @@ MonoBehaviour:
   m_Name: Enemy_DemonLord
   m_EditorClassIdentifier: Assembly-CSharp::CardGame.Combat.EnemyData
   displayName: "\uB9C8\uC655"
-  maxHP: 90
-  attackDamage: 12
+  maxHP: 100
+  attackDamage: 25
   goldReward: 50
   portrait: {fileID: 21300000, guid: a1bdffcba46a0fe4991995e1a143ed28, type: 3}
+  turnPattern: 000000000000000005000000
+  summonEnemyData: {fileID: 0}
+  summonCount: 2
+  defendAmount: 10

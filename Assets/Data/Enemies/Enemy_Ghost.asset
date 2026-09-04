@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9f2ea43600916a74da5a953593847c74, type: 3}
-  m_Name: Enemy_Orc
+  m_Name: Enemy_Ghost
   m_EditorClassIdentifier: Assembly-CSharp::CardGame.Combat.EnemyData
-  displayName: "\uC624\uD06C"
-  maxHP: 42
-  attackDamage: 6
-  goldReward: 12
-  portrait: {fileID: 0}
+  displayName: "\uACE0\uC2A4\uD2B8"
+  maxHP: 26
+  attackDamage: 10
+  goldReward: 10
+  portrait: {fileID: 21300000, guid: cdffc106bfbd1d74bac71d418e8d11bc, type: 3}

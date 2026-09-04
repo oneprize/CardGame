@@ -21,7 +21,11 @@ namespace CardGame.Cards
         Thorns,         // gain effectValue Thorns: reflect that much damage back at any enemy that attacks you, for 3 turns
         Barricade,      // Block no longer resets at the start of your turn, for the rest of the battle
         BlockMultiply,  // double your current Block
-        DefendAndWeaken // gain effectValue Block and apply Weaken to the selected target
+        DefendAndWeaken, // gain effectValue Block and apply Weaken to the selected target
+        DefendAndAttack, // gain effectValue Block and deal effectValue damage to the selected target
+        DefendAndEnfeeble, // gain effectValue Block and apply Enfeeble to the selected target
+        DefendPerEnemy, // gain effectValue Block for each currently-alive enemy
+        Lifesteal       // for the rest of this turn, heal effectValue% of any damage your attacks deal
     }
 
     [CreateAssetMenu(menuName = "CardGame/Card", fileName = "NewCard")]
@@ -87,6 +91,14 @@ namespace CardGame.Cards
                     return "방어 2배";
                 case CardType.DefendAndWeaken:
                     return $"방어 {effectValue} + 약화 부여";
+                case CardType.DefendAndAttack:
+                    return $"방어 {effectValue} + 공격 {effectValue}";
+                case CardType.DefendAndEnfeeble:
+                    return $"방어 {effectValue} + 무력화 부여";
+                case CardType.DefendPerEnemy:
+                    return $"적 1당 방어 {effectValue}";
+                case CardType.Lifesteal:
+                    return $"이번 턴 피해의 {effectValue}% 흡혈";
                 default:
                     return cardType.ToString();
             }

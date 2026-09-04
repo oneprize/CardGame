@@ -18,7 +18,7 @@ MonoBehaviour:
     \uD53C\uD574\uB97C \uC785\uD78C\uB2E4."
   cost: 2
   cardType: 2
-  effectValue: 5
+  effectValue: 8
   hitCount: 1
   ignoresBlock: 0
   exhausts: 0

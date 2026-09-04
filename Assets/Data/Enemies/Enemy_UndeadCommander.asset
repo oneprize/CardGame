@@ -13,7 +13,10 @@ MonoBehaviour:
   m_Name: Enemy_UndeadCommander
   m_EditorClassIdentifier: Assembly-CSharp::CardGame.Combat.EnemyData
   displayName: "\uC5B8\uB370\uB4DC \uC0AC\uB839\uAD00"
-  maxHP: 70
-  attackDamage: 9
+  maxHP: 54
+  attackDamage: 16
   goldReward: 35
   portrait: {fileID: 21300000, guid: cf97192156d0f364f99e72b43396de46, type: 3}
+  turnPattern: 000000000100000002000000
+  summonEnemyData: {fileID: 11400000, guid: b17063616e3f30741a490d9014ce2c1d, type: 2}
+  summonCount: 2

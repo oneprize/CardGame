@@ -13,7 +13,11 @@ MonoBehaviour:
   m_Name: Enemy_TrollChieftain
   m_EditorClassIdentifier: Assembly-CSharp::CardGame.Combat.EnemyData
   displayName: "\uD2B8\uB864 \uC871\uC7A5"
-  maxHP: 75
-  attackDamage: 11
+  maxHP: 68
+  attackDamage: 14
   goldReward: 40
   portrait: {fileID: 21300000, guid: 20d564e29ea4c064d9705c9166530cd1, type: 3}
+  turnPattern: 030000000300000004000000
+  summonEnemyData: {fileID: 0}
+  summonCount: 2
+  defendAmount: 25

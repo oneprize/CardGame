@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2da0d8f8177d9d749a3842e2bb180a00, type: 3}
+  m_Name: Card_WeakPointStab
+  m_EditorClassIdentifier: Assembly-CSharp::CardGame.Cards.CardData
+  id: weak_point_stab
+  displayName: "\uC57D\uC810 \uCC0C\uB974\uAE30"
+  description: "9\uC758 \uD53C\uD574\uB97C 2\uBC88 \uC5F0\uC18D \uC785\uD78C\uB2E4."
+  cost: 2
+  cardType: 0
+  effectValue: 9
+  hitCount: 2
+  ignoresBlock: 0
+  exhausts: 0
+  guideShape: 1
+  timeLimit: 3

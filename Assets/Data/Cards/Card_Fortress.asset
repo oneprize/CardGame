@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2da0d8f8177d9d749a3842e2bb180a00, type: 3}
+  m_Name: Card_Fortress
+  m_EditorClassIdentifier: Assembly-CSharp::CardGame.Cards.CardData
+  id: fortress
+  displayName: "\uC694\uC0C8"
+  description: "\uC801\uC758 \uC218\uB9CC\uD07C \uBC29\uC5B4\uB97C 7\uC529 \uC5BB\uB294\uB2E4."
+  cost: 2
+  cardType: 19
+  effectValue: 7
+  hitCount: 1
+  ignoresBlock: 0
+  exhausts: 0
+  guideShape: 3
+  timeLimit: 3

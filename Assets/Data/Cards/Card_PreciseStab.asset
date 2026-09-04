@@ -23,4 +23,4 @@ MonoBehaviour:
   ignoresBlock: 1
   exhausts: 0
   guideShape: 2
-  timeLimit: 3.5
+  timeLimit: 5
